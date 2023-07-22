@@ -89,7 +89,7 @@ clist = [1-2*float(i[1]) for i in datalist]
 cvector = np.array(clist)
 cepsilon = epsilon*cvector
 
-vectorlist = [np.array([classlist[i], sexlist[i], agelist[i]]) for i in range(891)]
+vectorlist = [np.array([classlist[i], namelist[i], sexlist[i], agelist[i], sibsplist[i], parchlist[i], ticketlist[i], farelist[i], Srider[i], Crider[i], Qrider[i]]) for i in range(891)]
 
 print(clist[:5])
 
@@ -108,12 +108,10 @@ Svector = epsilon*np.multiply(np.array(Srider),cvector)
 Cvector = epsilon*np.multiply(np.array(Crider),cvector)
 Qvector = epsilon*np.multiply(np.array(Qrider),cvector)
 
-trainlist = [classvector, sexvector, agevector]
+trainlist = [classvector, namevector, sexvector, agevector, sibspvector, parchvector, ticketvector, farevector, Svector, Cvector, Qvector]
 
-winit = [1 for i in range(3)]
-binit = 1
 
-def calc(w,b,pos):
+def calc(w,b,pos, vectorlist):
     wxb = np.dot(w, vectorlist[pos])+b
 
     if clist[pos]*wxb > 75:
@@ -121,11 +119,11 @@ def calc(w,b,pos):
 
     return 1/(np.exp(clist[pos]*wxb)+1)
 
-def train(wstart,bstart,depth):
+def train(wstart,bstart,depth, vectorlist, trainlist):
     w, b = wstart, bstart
 
     for i in range(depth):
-        vallist = [calc(w,b,i) for i in range(len(vectorlist))]
+        vallist = [calc(w,b,i, vectorlist) for i in range(len(vectorlist))]
         valvect = np.array(vallist)
 
         wchange = np.array([np.dot(valvect, trainlist[i]) for i in range(np.size(vectorlist[0]))])
@@ -141,14 +139,24 @@ def train(wstart,bstart,depth):
 
     return [w+wchange, b+bchange]
 
-modelvals = train(winit, binit, 15000)
 
-print(modelvals)
+winit = [1 for i in range(3)]
+binit = 1
 
-wfinal = modelvals[0]
-bfinal = modelvals[1]
+def spectrain(values):
+    clagsevector = [[i[j] for j in values] for i in vectorlist]
+    clagselist = [trainlist[j] for j in values]
 
-def calcexec(w, b, pos):
+    clagsevals = train(winit, binit, 15000, clagsevector, clagselist)
+
+    print(clagsevals)
+
+    clagsew = clagsevals[0]
+    clagseb = clagsevals[1]
+
+    return [clagsew, clagseb, clagsevector]
+
+def calcexec(w, b, pos, vectorlist):
     wxb = np.dot(w, vectorlist[pos]) + b
 
     if wxb > 75:
@@ -156,12 +164,9 @@ def calcexec(w, b, pos):
 
     return 1 / (np.exp(wxb) + 1)
 
-def modelcalc(person):
-    if calcexec(wfinal, bfinal, person) > 0.5:
-        return 1
+clagsemodel = spectrain([0,2,3])
 
-    return 0
 
-print([calcexec(wfinal, bfinal, i) for i in range(891) if min(1-calcexec(wfinal, bfinal, i), calcexec(wfinal, bfinal, i))>0.01])
+print([calcexec(clagsemodel[0], clagsemodel[1], i, clagsemodel[2]) for i in range(891)])
 
 #print(classvector)
